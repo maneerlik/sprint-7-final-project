@@ -13,8 +13,8 @@ import org.junit.Test;
 import java.util.logging.Logger;
 
 import static model.order.RandomOrderGenerator.randomOrder;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
+import static steps.BaseSteps.checkRespBodyElementIsNotNull;
+import static steps.BaseSteps.checkRespStatusCode;
 
 /**
  * @author  smirnov sergey
@@ -41,18 +41,8 @@ public class CreateNewOrderTest {
     @Severity(SeverityLevel.CRITICAL)
     public void createOrderTest() {
         ValidatableResponse response = client.create(order);
-        checkRespStatusCode(response);
-        checkTrackRespBody(response);
-    }
-
-    @Step("Статус код ответа: 201. Заказ создан")
-    public void checkRespStatusCode(ValidatableResponse response) {
-        assertEquals("Статус код неверный", HttpStatus.SC_CREATED, response.extract().statusCode());
-    }
-
-    @Step("Проверка ответа. Трек номер получен")
-    public void checkTrackRespBody(ValidatableResponse response) {
-        response.assertThat().body("track", notNullValue());
+        checkRespStatusCode(response, HttpStatus.SC_CREATED);
+        checkRespBodyElementIsNotNull(response, "track");
     }
 
 }

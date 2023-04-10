@@ -1,9 +1,13 @@
 package model.courier;
 
-import io.restassured.RestAssured;
+import io.qameta.allure.Step;
+import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
+import io.restassured.specification.RequestSpecification;
 import model.pojo.Courier;
 import model.pojo.CourierCreds;
+
+import java.io.File;
 
 import static io.restassured.RestAssured.given;
 import static model.api.Endpoints.*;
@@ -14,43 +18,45 @@ import static model.api.Endpoints.*;
  */
 public class CourierClient {
 
-    public CourierClient() {
-        RestAssured.baseURI = BASE_URI.getEndpoint();
+    // спецификация запроса
+    private RequestSpecification reqSpec() {
+        return given().log().all()
+            .contentType(ContentType.JSON)
+            .baseUri(BASE_URI.getEndpoint());
     }
 
     // создание курьера
+    @Step("Создание курьера")
     public ValidatableResponse create(Courier courier) {
-        return given().header("Content-type", "application/json")
-            .body(courier)
-            .post(CREATE_COURIER.getEndpoint())
-            .then()
-            .log()
-            .status()
-            .log()
-            .body();
+        return reqSpec().body(courier)
+            .post(CREATE_COURIER.getEndpoint()).then();
     }
 
-    // аутентификация курьера
+    // создание курьера без обязательного поля
+    @Step("Попытка создать курьера без поля {missingField}")
+    public ValidatableResponse create(String jsonReq, String missingField) {
+        return reqSpec().body(jsonReq)
+                .post(CREATE_COURIER.getEndpoint()).then();
+    }
+
+    // авторизация курьера
+    @Step("Авторизация курьера")
     public ValidatableResponse login(CourierCreds creds) {
-        return given().header("Content-type", "application/json")
-            .body(creds)
-            .post(LOGIN_COURIER.getEndpoint())
-            .then()
-            .log()
-            .status()
-            .log()
-            .body();
+        return reqSpec().body(creds)
+            .post(LOGIN_COURIER.getEndpoint()).then();
+    }
+
+    // авторизация курьера без обязательного поля
+    @Step("Попытка авторизоваться курьером без поля {missingField}")
+    public ValidatableResponse login(String jsonReq, String missingField) {
+        return reqSpec().body(jsonReq)
+                .post(LOGIN_COURIER.getEndpoint()).then();
     }
 
     // удаление курьера
+    @Step("Удаление курьера")
     public void delete(String courierId) {
-        given().header("Content-type", "application/json")
-            .delete(DELETE_COURIER.getEndpoint() + courierId)
-            .then()
-            .log()
-            .status()
-            .log()
-            .body();
+        reqSpec().delete(DELETE_COURIER.getEndpoint() + courierId).then();
     }
 
 }

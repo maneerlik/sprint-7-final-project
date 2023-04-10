@@ -16,7 +16,7 @@ public class Order {
     private int rentTime;
     private String deliveryDate;
     private String comment;
-    private List<Color> color;
+    private List<String> color;
 
     public Order() {
     }
@@ -93,11 +93,11 @@ public class Order {
         return this;
     }
 
-    public List<Color> getColor() {
+    public List<String> getColor() {
         return color;
     }
 
-    public Order setColor(List<Color> color) {
+    public Order setColor(List<String> color) {
         this.color = color;
         return this;
     }
