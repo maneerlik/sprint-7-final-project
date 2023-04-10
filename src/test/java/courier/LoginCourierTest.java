@@ -7,6 +7,7 @@ import io.restassured.response.ValidatableResponse;
 import model.courier.CourierClient;
 import model.pojo.Courier;
 import org.apache.http.HttpStatus;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,10 +15,7 @@ import java.util.logging.Logger;
 
 import static model.courier.RandomCourierGenerator.randomCourier;
 import static model.pojo.CourierCreds.credsFrom;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
+import static steps.BaseSteps.*;
 
 /**
  * @author  smirnov sergey
@@ -27,6 +25,7 @@ public class LoginCourierTest {
 
     private Courier courier;
     private CourierClient client; // утилитарный объект для работы с рестами курьера
+    private String courierId;
 
     @Before
     public void setUp() {
@@ -39,58 +38,32 @@ public class LoginCourierTest {
     @Epic(value = "Курьер")
     @Feature(value = "Авторизация курьера")
     @Test
-    @DisplayName("Авторизация существующего курьера")
-    @Description("Базовый тест для эндпоинта: /api/v1/courier/login - авторизация существующего курьера")
+    @DisplayName("Авторизация несуществующего курьера")
+    @Description("Базовый тест для эндпоинта: /api/v1/courier/login - авторизация несуществующего курьера")
     @Severity(SeverityLevel.CRITICAL)
-    public void loginCourierTest() {
-        client.create(courier);
-        ValidatableResponse response = loginCourier(courier);
-        checkLoginRespOKStatusCode(response);
-        checkIdRespBody(response);
-        deleteCourier(response);
+    public void loginVoidCourierTest() {
+        ValidatableResponse response = client.login(credsFrom(courier));
+        checkRespStatusCode(response, HttpStatus.SC_NOT_FOUND);
+        checkRespBodyMessage(response, "Учетная запись не найдена");
     }
 
     @Epic(value = "Курьер")
     @Feature(value = "Авторизация курьера")
     @Test
-    @DisplayName("Авторизация несуществующего курьера")
-    @Description("Базовый тест для эндпоинта: /api/v1/courier/login - авторизация несуществующего курьера")
+    @DisplayName("Авторизация существующего курьера")
+    @Description("Базовый тест для эндпоинта: /api/v1/courier/login - авторизация существующего курьера")
     @Severity(SeverityLevel.CRITICAL)
-    public void loginVoidCourierTest() {
-        ValidatableResponse response = loginCourier(courier);
-        checkLoginRespNOTFStatusCode(response);
-        checkNOTFRespBody(response);
+    public void loginCourierTest() {
+        client.create(courier); // создаем курьера
+        ValidatableResponse response = client.login(credsFrom(courier));
+        checkRespStatusCode(response, HttpStatus.SC_OK);
+        checkRespBodyElementIsNotNull(response, "id");
+        courierId = response.extract().path("id").toString();
     }
 
-    @Step("Авторизация курьера")
-    public ValidatableResponse loginCourier(Courier courier) {
-        return client.login(credsFrom(courier));
-    }
-
-    @Step("Статус код ответа: 200. Курьер авторизован")
-    public void checkLoginRespOKStatusCode(ValidatableResponse response) {
-        assertEquals("Статус код неверный", HttpStatus.SC_OK, response.extract().statusCode());
-    }
-
-    @Step("Статус код ответа: 404. Курьер не существует")
-    public void checkLoginRespNOTFStatusCode(ValidatableResponse response) {
-        assertEquals("Статус код неверный", HttpStatus.SC_NOT_FOUND, response.extract().statusCode());
-    }
-
-    @Step("Проверка ответа. Курьер авторизован")
-    public void checkIdRespBody(ValidatableResponse response) {
-        response.assertThat().body("id", notNullValue());
-    }
-
-    @Step("Проверка ответа. Учетная запись не найдена")
-    public void checkNOTFRespBody(ValidatableResponse response) {
-        assertThat("Ответ не корректный",
-                "{\"code\":404,\"message\":\"Учетная запись не найдена\"}", is(response.extract().asString()));
-    }
-
-    @Step
-    public void deleteCourier(ValidatableResponse response) {
-        client.delete(response.extract().path("id").toString());
+    @After
+    public void deleteCourier() {
+        if(courierId != null) client.delete(courierId);
     }
 
 }

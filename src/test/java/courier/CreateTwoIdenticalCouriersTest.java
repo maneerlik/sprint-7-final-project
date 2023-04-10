@@ -13,11 +13,9 @@ import org.junit.Test;
 
 import java.util.logging.Logger;
 
-import static model.pojo.CourierCreds.credsFrom;
 import static model.courier.RandomCourierGenerator.randomCourier;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static model.pojo.CourierCreds.credsFrom;
+import static steps.BaseSteps.*;
 
 /**
  * @author  smirnov sergey
@@ -44,32 +42,15 @@ public class CreateTwoIdenticalCouriersTest {
     @Severity(SeverityLevel.CRITICAL)
     public void createTwoIdenticalCouriersTest() {
         ValidatableResponse createFirstCourierResp = createCourier(courier);
-        checkCreateRespStatusCode(createFirstCourierResp);
+        checkRespStatusCode(createFirstCourierResp, HttpStatus.SC_CREATED);
         ValidatableResponse createSecondCourierResp = createCourier(courier);
-        checkErrRespStatusCode(createSecondCourierResp);
-        checkResponseBody(createSecondCourierResp);
+        checkRespStatusCode(createSecondCourierResp, HttpStatus.SC_CONFLICT);
+        checkRespBodyMessage(createSecondCourierResp, "Этот логин уже используется. Попробуйте другой.");
     }
 
     @Step("Cоздание курьера")
     public ValidatableResponse createCourier(Courier courier) {
         return client.create(courier);
-    }
-
-    @Step("Статус код ответа: 201. Курьер создан")
-    public void checkCreateRespStatusCode(ValidatableResponse response) {
-        assertEquals("Статус код неверный", HttpStatus.SC_CREATED, response.extract().statusCode());
-    }
-
-    @Step("Статус код ответа: 409. Логин уже используется")
-    public void checkErrRespStatusCode(ValidatableResponse response) {
-        assertEquals("Статус код неверный", HttpStatus.SC_CONFLICT, response.extract().statusCode());
-    }
-
-    @Step("Проверка ответа. Логин уже используется")
-    public void checkResponseBody(ValidatableResponse response) {
-        assertThat("Ответ не корректный",
-                "{\"code\":409,\"message\":\"Этот логин уже используется. Попробуйте другой.\"}",
-                is(response.extract().asString()));
     }
 
     @After

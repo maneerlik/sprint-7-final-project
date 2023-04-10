@@ -13,11 +13,10 @@ import org.junit.Test;
 
 import java.util.logging.Logger;
 
-import static model.pojo.CourierCreds.credsFrom;
 import static model.courier.RandomCourierGenerator.randomCourier;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static model.pojo.CourierCreds.credsFrom;
+import static steps.BaseSteps.checkRespStatusCode;
+import static steps.BaseSteps.checkRespTrue;
 
 /**
  * @author  smirnov sergey
@@ -44,24 +43,14 @@ public class CreateNewCourierTest {
     @Severity(SeverityLevel.CRITICAL)
     public void сreateNewCourierTest() {
         ValidatableResponse response = client.create(courier);
-        checkRespStatusCode(response);
-        checkCreateRespBody(response);
-    }
-
-    @Step("Статус код ответа: 201. Курьер создан")
-    public void checkRespStatusCode(ValidatableResponse response) {
-        assertEquals("Статус код неверный", HttpStatus.SC_CREATED, response.extract().statusCode());
-    }
-
-    @Step("Проверка ответа. Курьер создан")
-    public void checkCreateRespBody(ValidatableResponse response) {
-        assertThat("Ответ не корректный", "{\"ok\":true}", is(response.extract().asString()));
+        checkRespStatusCode(response, HttpStatus.SC_CREATED);
+        checkRespTrue(response, true);
     }
 
     @After
     public void deleteCourier() {
-        ValidatableResponse loginCourierResp = client.login(credsFrom(courier));
-        client.delete(loginCourierResp.extract().path("id").toString());
+        ValidatableResponse response = client.login(credsFrom(courier));
+        client.delete(response.extract().path("id").toString());
     }
 
 }
